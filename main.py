@@ -83,6 +83,30 @@ def get_metrika_data(token, counter_id, date_from: str, date_to: str):
                 db.upsert_organic_pages_data(organic_page_data)
                 print(f'Записано в БД {organic_page_data.get('page_url')}, {date_start} - {date_end}')
 
+    for date_start, date_end in generate_monthly_periods(date_from, date_to):
+        for url_data in get_metrika_referral_urls(metrika, dates[0], dates[1]):
+            db.upsert_referral_urls_data(url_data)
+        print(f'Записаны в БД реферальные ссылки {date_start} - {date_end}')
+
+
+def get_metrika_referral_urls(metrika: YandexMetrika, date_from: str, date_to: str) -> list:
+    '''
+    Возвращает список словарей. Один словарь - один url реферер
+    '''
+
+    res = []
+    for url, visits in metrika.get_referral_traffic(date_from, date_to).items():
+        url_data = {
+            'referral_url': url,
+            'visits': int(visits)
+        }
+        url_data['date_from'] = date_from
+        url_data['date_to'] = date_to
+        url_data['month_year'] = format_date(date_from)
+        res.append(url_data)
+    
+    return res
+    
 
 def get_webmaster_data(token, host, user_id, date_start, date_end):
     webmaster = YandexWebmaster(token, host, user_id)

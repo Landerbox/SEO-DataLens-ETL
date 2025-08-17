@@ -97,6 +97,18 @@ SQL_COMMANDS = [
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT unique_query_text_date UNIQUE (date_from, date_to, query_text)
     )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS public.referral_urls (
+        id BIGSERIAL PRIMARY KEY,
+        referral_url VARCHAR(512),
+        visits INTEGER NOT NULL,
+        date_from DATE NOT NULL,
+        date_to DATE NOT NULL,
+        month_year VARCHAR(512) NOT NULL,
+        updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        CONSTRAINT unique_date_range_referral_urls UNIQUE (date_from, date_to, referral_url)
+    )
     """
 ]
 
@@ -111,7 +123,7 @@ def create_tables():
             logger.info("Выполнена команда: %s", command.split()[0:4] + ["..."])
         
         conn.commit()
-        logger.info("Все таблицы и индексы успешно созданы")
+        logger.info("Все таблицы успешно созданы")
         
     except psycopg2.Error as e:
         logger.error(f"Ошибка при создании таблиц: {e}")
@@ -264,6 +276,50 @@ def upsert_organic_pages_data(data: dict) -> Optional[int]:
         logging.error(f"Ошибка базы данных: {e}")
         return None
 
+def upsert_referral_urls_data(data: dict) -> Optional[int]:
+    """
+    Вставляет или обновляет данные url рефереров
+    
+    Args:
+        data: Словарь с данными
+    
+    Returns:
+        int: ID обновленной/созданной записи
+        None: В случае ошибки
+    """
+
+    query = """
+    INSERT INTO public.referral_urls (
+        referral_url, visits, 
+        date_from, date_to, month_year
+    ) VALUES (
+        %(referral_url)s, %(visits)s,
+        %(date_from)s, %(date_to)s, %(month_year)s
+    )
+    ON CONFLICT (date_from, date_to, referral_url)
+    DO UPDATE SET
+        referral_url = EXCLUDED.referral_url,
+        visits = EXCLUDED.visits,
+        date_from = EXCLUDED.date_from,
+        date_to = EXCLUDED.date_to,
+        month_year = EXCLUDED.month_year,
+        updated_at = NOW()
+    RETURNING id
+    """
+    
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cursor:
+                cursor.execute(query, data)
+                record_id = cursor.fetchone()[0]
+                conn.commit()
+                logging.info(f"Данные за {data['date_from']}-{data['date_to']} обновлены. ID: {record_id}")
+                return record_id
+                
+    except psycopg2.Error as e:
+        logging.error(f"Ошибка базы данных: {e}")
+        return None
+    
 def upsert_search_queries_webmaster_data(data: dict) -> Optional[int]:
     """
     Вставляет или обновляет данные запросов с вебмастера
@@ -351,7 +407,5 @@ def execute_sql_query(query, params=None):
             conn.close()
 
 if __name__ == '__main__':
-    execute_sql_query('''
-    UPDATE search_queries_webmaster
-    SET month_year = REGEXP_REPLACE(month_year, '\s+', ' ')''')
+    print(execute_sql_query('SHOW max_connections'))
 

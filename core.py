@@ -319,8 +319,8 @@ class YandexMetrika:
 
     def get_behavior_metrics(self, date_from: str, date_to: str, base_url: str = None) -> dict:
         """
-        :param base_url: URL второго уровня (например 'https://zaruku.ru/rak-lyogkogo/')
-                        Если None - возвращает данные для всех
+        :param base_url: URL второго уровня (например 'https://zaruku.ru/rak-lyogkogo/').
+        Если None - возвращает данные для всех
         :param date_from: Начальная дата (YYYY-MM-DD)
         :param date_to: Конечная дата (YYYY-MM-DD)
         :return: {
@@ -362,6 +362,39 @@ class YandexMetrika:
             'visits': int(metrics[0])                  # Количество визитов
         }
     
-    
+    def get_referral_traffic(
+        self,
+        date_from: str,
+        date_to: str,
+        entry_url: str = None
+        ) -> dict:
+        """
+        Получить переходы с других сайтов (реферальный трафик) за период.
+        
+        :param date_from: Начальная дата периода в формате YYYY-MM-DD
+        :param date_to: Конечная дата периода в формате YYYY-MM-DD
+        :param entry_url: (опционально) URL точки входа для фильтрации (например 'https://zaruku.ru/rak-molochnoj-zhelezy/')
+        :return: Словарь вида {'реферальный_домен': количество_визитов}
+        """
+        params = {
+            "ids": self.counter_id,
+            "metrics": "ym:s:visits",
+            "dimensions": "ym:s:externalReferer",
+            "date1": date_from,
+            "date2": date_to
+        }
+        
+        if entry_url:
+            params["filters"] = f"ym:s:startURL=='{entry_url}'"
+        
+        data = self._request("GET", self.base_metrika_url, params=params)
+        
+        referral_traffic = {}
+        for row in data.get("data", []):
+            domain = row["dimensions"][0]["name"]
+            visits = row["metrics"][0]
+            referral_traffic[domain] = visits
+        
+        return referral_traffic
 
     
