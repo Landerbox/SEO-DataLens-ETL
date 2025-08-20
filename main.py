@@ -62,7 +62,7 @@ def get_metrika_data(token, counter_id, date_from: str, date_to: str):
             traffic_data['google_traffic'] = search_engines.get('google')
 
             traffic_data['month_year'] = format_date(str(traffic_data['date_from']))
-
+            print(traffic_data)
             db.upsert_traffic_data(traffic_data)
             print(f'Записано в БД {url}, {date_start} - {date_end}')
 
@@ -84,7 +84,9 @@ def get_metrika_data(token, counter_id, date_from: str, date_to: str):
                 print(f'Записано в БД {organic_page_data.get('page_url')}, {date_start} - {date_end}')
 
     for date_start, date_end in generate_monthly_periods(date_from, date_to):
-        for url_data in get_metrika_referral_urls(metrika, dates[0], dates[1]):
+        x = get_metrika_referral_urls(metrika, date_start, date_end)
+        for url_data in x:
+            print(url_data)
             db.upsert_referral_urls_data(url_data)
         print(f'Записаны в БД реферальные ссылки {date_start} - {date_end}')
 

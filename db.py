@@ -227,7 +227,6 @@ def upsert_traffic_data(data: dict) -> Optional[int]:
         logging.error(f"Ошибка при обновлении данных: {e}")
         return None
 
-
 def upsert_organic_pages_data(data: dict) -> Optional[int]:
     """
     Вставляет или обновляет данные органического трафика по страницам
@@ -276,7 +275,7 @@ def upsert_organic_pages_data(data: dict) -> Optional[int]:
         logging.error(f"Ошибка базы данных: {e}")
         return None
 
-def upsert_referral_urls_data(data: dict) -> Optional[int]:
+def upsert_referral_urls_data(data: dict) -> Optional[int]: # лучше оптимизировать функцию (пакетное обновление), чтобы не создавать новое подключения для каждого урла в рамках одной даты
     """
     Вставляет или обновляет данные url рефереров
     
@@ -371,7 +370,7 @@ def upsert_search_queries_webmaster_data(data: dict) -> Optional[int]:
 def execute_sql_query(query, params=None):
     """
     Выполняет SQL-запрос к PostgreSQL и возвращает результат
-    
+
     :param db_config: словарь с параметрами подключения (host, dbname, user, password)
     :param query: SQL-запрос (строка или объект sql.SQL)
     :param params: параметры для запроса (кортеж или словарь)

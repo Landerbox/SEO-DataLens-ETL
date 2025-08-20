@@ -19,12 +19,8 @@ WEBMASTER_USER_ID = get_yandex_webmaster_user_id(OAUTH_TOKEN)
 
 
 if __name__ == '__main__':
-    dates = (generate_monthly_periods('2024-01-01', '2025-08-08'))
+    dates = (get_current_month_period())
     metrika = YandexMetrika(OAUTH_TOKEN, COUNTER_ID)
+    data = metrika.get_referral_traffic(dates[0], dates[1])
     import main
-    for date in dates:
-        x = main.get_metrika_referral_urls(metrika, date[0], date[1])
-        for url_data in x:
-            print(url_data)
-            db.upsert_referral_urls_data(url_data)
-        print('Успешный успех')
+    print(main.get_metrika_referral_urls(metrika, dates[0], dates[1]))
